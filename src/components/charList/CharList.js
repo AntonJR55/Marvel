@@ -1,4 +1,5 @@
 import { Component } from "react";
+
 import MarvelService from "../../services/MarvelService";
 import Spinner from "../spinner/Spinner";
 import ErrorMessage from "../errorMessage/ErrorMessage";
@@ -40,7 +41,11 @@ class CharList extends Component {
             }
 
             return (
-                <li className="char__item" key={item.id}>
+                <li
+                    className="char__item"
+                    key={item.id}
+                    onClick={() => this.props.onCharSelected(item.id)}
+                >
                     <img
                         src={item.thumbnail}
                         alt={item.name}
@@ -59,8 +64,8 @@ class CharList extends Component {
 
         const items = this.renderItems(charList);
 
-        const errorMessage = error ? <ErrorMessage/> : null;
-        const spinner = loading ? <Spinner/> : null;
+        const errorMessage = error ? <ErrorMessage /> : null;
+        const spinner = loading ? <Spinner /> : null;
         const content = !(loading || error) ? items : null;
 
         return (

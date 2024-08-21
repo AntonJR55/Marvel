@@ -1,4 +1,5 @@
 import { Component } from "react";
+
 import MarvelService from "../../services/MarvelService";
 import Spinner from "../spinner/Spinner";
 import ErrorMessage from "../errorMessage/ErrorMessage";
@@ -81,6 +82,7 @@ class RandomChar extends Component {
 
 const View = ({ char }) => {
     const { name, description, thumbnail, homepage, wiki } = char;
+    
     let imgStyle = { objectFit: "cover" };
     if (
         thumbnail ===
