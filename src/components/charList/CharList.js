@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
 import MarvelService from "../../services/MarvelService";
@@ -7,76 +7,71 @@ import ErrorMessage from "../errorMessage/ErrorMessage";
 
 import "./charList.scss";
 
-class CharList extends Component {
-    state = {
-        charList: [],
-        charListLoading: true,
-        newCharListLoading: false,
-        error: false,
-        charEnded: false,
-        pageEnded: false,
-        offset: 210,
-    };
+const CharList = ({ charId, onCharSelected }) => {
+    const [charList, setCharList] = useState([]);
+    const [charListLoading, setCharListLoading] = useState(true);
+    const [newCharListLoading, setNewCharListLoading] = useState(false);
+    const [error, setError] = useState(false);
+    const [charEnded, setCharEnded] = useState(false);
+    const [pageEnded, setPageEnded] = useState(false);
+    const [offset, setOffset] = useState(210);
 
-    marvelService = new MarvelService();
+    const marvelService = new MarvelService();
 
-    componentDidMount() {
-        this.updateCharList();
+    useEffect(() => {
+        updateCharList();
 
-        window.addEventListener("scroll", this.checkPageEnded);
-        window.addEventListener("scroll", this.updateCharListByScroll);
-    }
+        window.addEventListener("scroll", checkPageEnded);
+        console.log("scroll");
+        return () => {
+            window.removeEventListener("scroll", checkPageEnded);
+            console.log("unscroll");
+        };
+    }, []);
 
-    componentWillUnmount() {
-        window.removeEventListener("scroll", this.checkPageEnded);
-        window.removeEventListener("scroll", this.updateCharListByScroll);
-    }
+    useEffect(() => {
+        updateCharListByScroll();
+    }, [pageEnded]);
 
-    updateCharList = (offset) => {
-        this.marvelService
+    const updateCharList = (offset) => {
+        marvelService
             .getAllCharacters(offset)
-            .then(this.onCharListLoaded)
-            .catch(this.onError);
+            .then(onCharListLoaded)
+            .catch(onError);
     };
 
-    onCharListLoaded = (newCharList) => {
-        this.setState((prevState) => ({
-            charList: [...prevState.charList, ...newCharList],
-            charListLoading: false,
-            newCharListLoading: false,
-            charEnded: newCharList.length < 9,
-            pageEnded: false,
-            offset: prevState.offset + 9,
-        }));
+    const onCharListLoaded = (newCharList) => {
+        setCharList((charList) => [...charList, ...newCharList]);
+        setCharListLoading(false);
+        setNewCharListLoading(false);
+        setCharEnded(newCharList.length < 9);
+        setPageEnded(false);
+        setOffset((offset) => offset + 9);
     };
 
-    updateCharListByScroll = () => {
-        const { pageEnded, charEnded, newCharListLoading, offset } = this.state;
-
+    const updateCharListByScroll = () => {
         if (pageEnded && !newCharListLoading && !charEnded) {
-            this.setState({ newCharListLoading: true });
-            this.updateCharList(offset);
+            setNewCharListLoading(true);
+            updateCharList(offset);
         }
     };
 
-    checkPageEnded = () => {
+    const checkPageEnded = () => {
         if (
             window.scrollY + document.documentElement.clientHeight >=
-            document.documentElement.offsetHeight - 3
+                document.documentElement.offsetHeight - 3
         ) {
-            this.setState({ pageEnded: true });
+            setPageEnded(true);
         }
     };
 
-    onError = () => {
-        this.setState({
-            charListLoading: false,
-            newCharListLoading: false,
-            error: true,
-        });
+    const onError = () => {
+        setCharListLoading(false);
+        setNewCharListLoading(false);
+        setError(true);
     };
 
-    renderItems(arr) {
+    const renderItems = (arr) => {
         const items = arr.map((item) => {
             let imgStyle = { objectFit: "cover" };
             if (
@@ -86,7 +81,7 @@ class CharList extends Component {
                 imgStyle = { objectFit: "unset" };
             }
 
-            const active = this.props.charId === item.id;
+            const active = charId === item.id;
 
             const className = active
                 ? "char__item char__item_selected"
@@ -98,7 +93,7 @@ class CharList extends Component {
                     key={item.id}
                     tabIndex={0}
                     onFocus={() => {
-                        this.props.onCharSelected(item.id);
+                        onCharSelected(item.id);
                     }}
                 >
                     <img
@@ -112,28 +107,22 @@ class CharList extends Component {
         });
 
         return <ul className="char__grid">{items}</ul>;
-    }
+    };
 
-    render() {
-        const { charList, charListLoading, newCharListLoading, error } =
-            this.state;
+    const items = renderItems(charList);
 
-        const items = this.renderItems(charList);
+    const content = !(charListLoading || error) ? items : null;
+    const spinner = charListLoading || newCharListLoading ? <Spinner /> : null;
+    const errorMessage = error ? <ErrorMessage /> : null;
 
-        const content = !(charListLoading || error) ? items : null;
-        const spinner =
-            charListLoading || newCharListLoading ? <Spinner /> : null;
-        const errorMessage = error ? <ErrorMessage /> : null;
-
-        return (
-            <div className="char__list">
-                {content}
-                {spinner}
-                {errorMessage}
-            </div>
-        );
-    }
-}
+    return (
+        <div className="char__list">
+            {content}
+            {spinner}
+            {errorMessage}
+        </div>
+    );
+};
 
 CharList.propTypes = {
     onCharSelected: PropTypes.func.isRequired,
