@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import useMarvelService from "../../services/MarvelService";
 import PropTypes from "prop-types";
 
-import MarvelService from "../../services/MarvelService";
 import Spinner from "../spinner/Spinner";
 import ErrorMessage from "../errorMessage/ErrorMessage";
 
@@ -9,23 +9,18 @@ import "./charList.scss";
 
 const CharList = ({ charId, onCharSelected }) => {
     const [charList, setCharList] = useState([]);
-    const [charListLoading, setCharListLoading] = useState(true);
-    const [newCharListLoading, setNewCharListLoading] = useState(false);
-    const [error, setError] = useState(false);
+    const [newLoading, setNewLoading] = useState(false);
     const [charEnded, setCharEnded] = useState(false);
     const [pageEnded, setPageEnded] = useState(false);
     const [offset, setOffset] = useState(210);
 
-    const marvelService = new MarvelService();
+    const { loading, error, getAllCharacters } = useMarvelService();
 
     useEffect(() => {
-        updateCharList();
-
+        updateCharList(offset, true);
         window.addEventListener("scroll", checkPageEnded);
-        console.log("scroll");
         return () => {
             window.removeEventListener("scroll", checkPageEnded);
-            console.log("unscroll");
         };
     }, []);
 
@@ -33,25 +28,21 @@ const CharList = ({ charId, onCharSelected }) => {
         updateCharListByScroll();
     }, [pageEnded]);
 
-    const updateCharList = (offset) => {
-        marvelService
-            .getAllCharacters(offset)
-            .then(onCharListLoaded)
-            .catch(onError);
+    const updateCharList = (offset, initial) => {
+        initial ? setNewLoading(false) : setNewLoading(true);
+        getAllCharacters(offset).then(onCharListLoaded);
     };
 
     const onCharListLoaded = (newCharList) => {
         setCharList((charList) => [...charList, ...newCharList]);
-        setCharListLoading(false);
-        setNewCharListLoading(false);
         setCharEnded(newCharList.length < 9);
+        setNewLoading(false);
         setPageEnded(false);
         setOffset((offset) => offset + 9);
     };
 
     const updateCharListByScroll = () => {
-        if (pageEnded && !newCharListLoading && !charEnded) {
-            setNewCharListLoading(true);
+        if (pageEnded && !newLoading && !charEnded) {
             updateCharList(offset);
         }
     };
@@ -59,16 +50,10 @@ const CharList = ({ charId, onCharSelected }) => {
     const checkPageEnded = () => {
         if (
             window.scrollY + document.documentElement.clientHeight >=
-                document.documentElement.offsetHeight - 3
+            document.documentElement.offsetHeight - 3
         ) {
             setPageEnded(true);
         }
-    };
-
-    const onError = () => {
-        setCharListLoading(false);
-        setNewCharListLoading(false);
-        setError(true);
     };
 
     const renderItems = (arr) => {
@@ -111,13 +96,12 @@ const CharList = ({ charId, onCharSelected }) => {
 
     const items = renderItems(charList);
 
-    const content = !(charListLoading || error) ? items : null;
-    const spinner = charListLoading || newCharListLoading ? <Spinner /> : null;
+    const spinner = loading || newLoading ? <Spinner /> : null;
     const errorMessage = error ? <ErrorMessage /> : null;
 
     return (
         <div className="char__list">
-            {content}
+            {items}
             {spinner}
             {errorMessage}
         </div>
