@@ -8,16 +8,16 @@ import ErrorMessage from "../errorMessage/ErrorMessage";
 import "./comicsList.scss";
 
 const ComicsList = () => {
-    const [charList, setCharList] = useState([]);
+    const [comicsList, setComicsList] = useState([]);
     const [newLoading, setNewLoading] = useState(false);
-    const [charEnded, setCharEnded] = useState(false);
+    const [comicsEnded, setComicsEnded] = useState(false);
     const [pageEnded, setPageEnded] = useState(false);
     const [offset, setOffset] = useState(0);
 
-    const { loading, error, getAllComics } = useMarvelService();
+    const { loading, getAllComics, error } = useMarvelService();
 
     useEffect(() => {
-        updateCharList(offset, true);
+        updateComicsList(offset, true);
         window.addEventListener("scroll", checkPageEnded);
         return () => {
             window.removeEventListener("scroll", checkPageEnded);
@@ -25,25 +25,25 @@ const ComicsList = () => {
     }, []);
 
     useEffect(() => {
-        updateCharListByScroll();
+        updateComicsListByScroll();
     }, [pageEnded]);
 
-    const updateCharList = (offset, initial) => {
+    const updateComicsList = (offset, initial) => {
         initial ? setNewLoading(false) : setNewLoading(true);
-        getAllComics(offset).then(onCharListLoaded);
+        getAllComics(offset).then(onComicsListLoaded);
     };
 
-    const onCharListLoaded = (newCharList) => {
-        setCharList((charList) => [...charList, ...newCharList]);
-        setCharEnded(newCharList.length < 8);
+    const onComicsListLoaded = (newComicsList) => {
+        setComicsList((comicsList) => [...comicsList, ...newComicsList]);
+        setComicsEnded(newComicsList.length < 8);
         setNewLoading(false);
         setPageEnded(false);
         setOffset((offset) => offset + 8);
     };
 
-    const updateCharListByScroll = () => {
-        if (pageEnded && !newLoading && !charEnded) {
-            updateCharList(offset);
+    const updateComicsListByScroll = () => {
+        if (pageEnded && !newLoading && !comicsEnded) {
+            updateComicsList(offset);
         }
     };
 
@@ -76,12 +76,10 @@ const ComicsList = () => {
         return <ul className="comics__grid">{items}</ul>;
     };
 
-    const items = renderItems(charList);
+    const items = renderItems(comicsList);
 
     const spinner = loading || newLoading ? <Spinner /> : null;
     const errorMessage = error ? <ErrorMessage /> : null;
-
-    console.log("render");
 
     return (
         <div className="comics__list">
